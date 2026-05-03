@@ -185,7 +185,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--dp);color:var(--dt);min-h
   border-right:1px solid rgba(79,195,247,0.08);
   border-bottom:1px solid rgba(79,195,247,0.08);
   padding:7px 9px 9px;
-  min-height:100px;
+  min-height:115px;
   position:relative;
   cursor:pointer;
   transition:background .15s ease;
@@ -201,9 +201,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--dp);color:var(--dt);min-h
 
 /* Majalis — subtle ruby tint */
 .cell.ev-jk{
-  background:linear-gradient(160deg,#050B15 0%,#120608 45%,#1E080F 100%);
-  border-color:rgba(185,28,60,0.45)!important;
-  box-shadow:inset 0 0 24px rgba(140,10,30,0.18);
+  background:linear-gradient(160deg,#031208 0%,#062010 45%,#0A2E16 100%);
+  border-color:rgba(16,185,100,0.5)!important;
+  box-shadow:inset 0 0 24px rgba(10,120,60,0.2);
+}
+/* Day with BOTH majalis and training — red gradient */
+.cell.ev-jk.ev-training{
+  background:linear-gradient(160deg,#0E0305 0%,#1E0508 45%,#2A0A0C 100%);
+  border-color:rgba(185,28,60,0.55)!important;
+  box-shadow:inset 0 0 24px rgba(180,20,40,0.2);
 }
 /* Training — subtle amber tint */
 .cell.ev-training{
@@ -218,44 +224,46 @@ body{font-family:'DM Sans',sans-serif;background:var(--dp);color:var(--dt);min-h
 /* ── CIRCLE BADGE (top-right corner) ── */
 .cell-badge{
   position:absolute;top:7px;right:7px;
-  width:34px;height:34px;border-radius:50%;
+  width:38px;height:38px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   font-family:'Barlow',sans-serif;font-weight:900;
   flex-shrink:0;letter-spacing:-.3px;
-  font-size:10px;
+  font-size:11px;
 }
 .cell-badge.badge-jk{
-  background:linear-gradient(135deg,#0A1E44,#1258AA);
-  border:1.5px solid rgba(79,195,247,0.55);
+  background:linear-gradient(135deg,#063A1A,#0D6B2E);
+  border:2px solid #FFFFFF;
   color:#FFFFFF;
   text-transform:uppercase;
   letter-spacing:.05em;
   text-shadow:0 1px 3px rgba(0,0,0,0.4);
 }
 .cell-badge.badge-k{
-  background:linear-gradient(135deg,rgba(4,60,45,0.85),rgba(10,100,60,0.85));
-  border:1.5px solid rgba(16,185,129,0.6);
-  color:#A7F3D0;
+  background:linear-gradient(135deg,#044A22,#0A7A38);
+  border:2px solid #FFFFFF;
+  color:#FFFFFF;
   text-transform:uppercase;
   letter-spacing:.05em;
 }
 .cell-badge.badge-tr{
-  background:linear-gradient(135deg,#4A2000,#8B4500);
-  border:1px solid rgba(200,130,30,0.45);
-  color:#FCD34D;
-  font-size:7px;
+  background:linear-gradient(135deg,#7A3500,#B45309);
+  border:2px solid #FFFFFF;
+  color:#FFFFFF;
+  font-size:11px;
+  font-weight:900;
 }
 
 /* ── DAY NUMBER ── */
 .dn{
-  font-family:'Barlow',sans-serif;font-size:19px;font-weight:900;
-  color:#4A7A98;line-height:1;margin-bottom:6px;letter-spacing:-.5px;
+  font-family:'Barlow',sans-serif;font-size:22px;font-weight:900;
+  color:#4A7A98;line-height:1;margin-bottom:7px;letter-spacing:-.5px;
 }
 .cell:hover .dn{color:#5A90B8;}
 
 
-.cell.ev-jk .dn{color:#A05565;}
-.cell.ev-training .dn{color:#8A7030;}
+.cell.ev-jk .dn{color:#4ADE80;}
+.cell.ev-training .dn{color:#FCD34D;}
+.cell.ev-jk.ev-training .dn{color:#F87171;}
 
 /* ── DUTY BLOCK ── */
 .duty{margin-top:0;}
@@ -271,13 +279,25 @@ body{font-family:'DM Sans',sans-serif;background:var(--dp);color:var(--dt);min-h
 .duty-lbl.mph-lbl{color:#7C3AED;border-left-color:#5B21B6;}
 .duty-name{
   font-family:'DM Sans',sans-serif;
-  font-size:13px;font-weight:700;
+  font-size:15px;font-weight:700;
   color:#FFFFFF;line-height:1.25;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   max-width:100%;
   display:block;
   text-shadow:0 1px 4px rgba(0,0,0,0.35);
 }
+.cell.ev-jk .duty-name{color:#4ADE80;}
+.cell.ev-training .duty-name{color:#FCD34D;}
+.cell.ev-jk.ev-training .duty-name{color:#F87171;}
+.cell.ev-training .duty .duty-lbl{color:#FCD34D;border-left-color:#F59E0B;}
+.cell.ev-jk:not(.ev-training) .duty .duty-lbl{color:#4ADE80;border-left-color:#22C55E;}
+.cell.ev-jk.ev-training .duty .duty-lbl{color:#F87171;border-left-color:#EF4444;}
+/* Trainee line inherits cell colour */
+.cell.ev-training .duty div:last-child{color:#FCD34D;}
+.cell.ev-jk.ev-training .duty div:last-child{color:#F87171;}
+/* MPH duty name stays amber always */
+.cell .duty-name[style*="E8C060"]{color:#E8C060!important;}
+.cell .duty-name[style*="C8A040"]{color:#C8A040!important;}
 .chk{color:#4FC3F7;font-size:9px;flex-shrink:0;margin-left:2px;}
 .duty-unassigned{
   font-family:'DM Sans',sans-serif;
@@ -294,9 +314,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--dp);color:var(--dt);min-h
   background:rgba(21,101,192,0.12);
   color:#6A9EC0;
   font-family:'DM Sans',sans-serif;
-  font-size:7px;font-weight:700;
+  font-size:8px;font-weight:700;
   text-transform:uppercase;letter-spacing:.07em;
-  padding:2px 6px;border-radius:3px;
+  padding:2px 7px;border-radius:3px;
   margin-top:3px;
   border:1px solid rgba(21,101,192,0.18);
 }
@@ -1847,18 +1867,18 @@ function showDebugInfo(){
 ═══════════════════════════════════ */
 // Maps majalis name → { abbr, isK }
 const MJ_ABBR = {
-  'Chandraat':              {abbr:'C',       isK:false},
-  'Student':                {abbr:'S',       isK:false},
-  'Paanch Baar Saal':       {abbr:'PBS',     isK:false},
-  'Bait-ul Khayal':         {abbr:'BK',      isK:false},
-  'Bait ul Khayal':         {abbr:'BK',      isK:false},
-  'Bait-ul-Khayal':         {abbr:'BK',      isK:false},
-  'Chandraat (K)':          {abbr:'C (K)',   isK:true },
-  'Student (K)':            {abbr:'S (K)',   isK:true },
-  'Paanch Baar Saal (K)':   {abbr:'PBS (K)', isK:true },
-  'Bait-ul Khayal (K)':     {abbr:'BK (K)', isK:true },
-  'Bait ul Khayal (K)':     {abbr:'BK (K)', isK:true },
-  'Bait-ul-Khayal (K)':     {abbr:'BK (K)', isK:true },
+  'Chandraat':              {abbr:'Chandraat',   isK:false, isPill:true },
+  'Student':                {abbr:'Student',     isK:false, isPill:true },
+  'Paanch Baar Saal':       {abbr:'PBS',         isK:false, isPill:false},
+  'Bait-ul Khayal':         {abbr:'BK',          isK:false, isPill:false},
+  'Bait ul Khayal':         {abbr:'BK',          isK:false, isPill:false},
+  'Bait-ul-Khayal':         {abbr:'BK',          isK:false, isPill:false},
+  'Chandraat (K)':          {abbr:'Chandraat (K)',isK:true,  isPill:true },
+  'Student (K)':            {abbr:'Student (K)', isK:true,  isPill:true },
+  'Paanch Baar Saal (K)':   {abbr:'PBS (K)',     isK:true,  isPill:false},
+  'Bait-ul Khayal (K)':     {abbr:'BK (K)',      isK:true,  isPill:false},
+  'Bait ul Khayal (K)':     {abbr:'BK (K)',      isK:true,  isPill:false},
+  'Bait-ul-Khayal (K)':     {abbr:'BK (K)',      isK:true,  isPill:false},
 };
 
 function getMjBadge(name){
@@ -1925,24 +1945,43 @@ function renderCal(){
 
     const div=document.createElement('div');
     let cls='cell';
-    if(c.pad)   cls+=' other';
-    else if(tr) cls+=' ev-training';
-    else if(mj) cls+=' ev-jk';
+    if(c.pad)          cls+=' other';
+    else if(tr && mj)  cls+=' ev-jk ev-training';
+    else if(tr)        cls+=' ev-training';
+    else if(mj)        cls+=' ev-jk';
     /* today class removed — no highlight needed */
     div.className=cls;
     div.onclick=()=>openDayModal(ds,c.d);
 
     let h='<div class="cell-inner">';
 
-    // ── Badge (top-right circle) ──
-    if(tr){
-      h+=`<div style="position:absolute;top:7px;right:7px;background:linear-gradient(135deg,#92400E,#B45309);color:#FCD34D;border:1px solid rgba(245,158,11,0.4);border-radius:20px;padding:2px 7px;font-family:'DM Sans',sans-serif;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;">🎓 Training</div>`;
-    } else if(mj){
+    // ── Badges ──
+    if(tr && mj){
+      // Both: majalis badge top-right, smaller T badge to its left
       const _bc=getMjBadge(mj.name);
-      if(_bc){
-        h+=`<div class="cell-badge ${_bc.isK?'badge-k':'badge-jk'}" style="font-size:${_bc.abbr.length>5?'8px':_bc.abbr.length>3?'9px':'11px'}">${_bc.abbr}</div>`;
+      if(_bc && _bc.isPill){
+        h+=`<div style="position:absolute;top:7px;right:7px;background:linear-gradient(135deg,#063A1A,#0D6B2E);border:2px solid #FFFFFF;border-radius:20px;padding:4px 10px;font-family:'DM Sans',sans-serif;font-size:9px;font-weight:900;text-transform:uppercase;color:#FFFFFF;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;">${_bc.abbr}</div>`;
+        h+=`<div style="position:absolute;top:10px;right:114px;background:linear-gradient(135deg,#7A3500,#B45309);border:2px solid #FFFFFF;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:'Barlow',sans-serif;font-size:14px;font-weight:900;color:#FFFFFF;">T</div>`;
+      } else if(_bc){
+        h+=`<div class="cell-badge ${_bc.isK?'badge-k':'badge-jk'}" style="font-size:${_bc.abbr.length>5?'8px':'11px'}">${_bc.abbr}</div>`;
+        h+=`<div style="position:absolute;top:10px;right:52px;background:linear-gradient(135deg,#7A3500,#B45309);border:2px solid #FFFFFF;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:'Barlow',sans-serif;font-size:14px;font-weight:900;color:#FFFFFF;">T</div>`;
       } else {
-        h+=`<div class="cell-badge badge-jk" style="font-size:6px;width:30px;border-radius:8px;white-space:nowrap;">${trunc(mj.name,6)}</div>`;
+        // Custom majalis name as pill
+        h+=`<div style="position:absolute;top:7px;right:7px;background:linear-gradient(135deg,#063A1A,#0D6B2E);border:2px solid #FFFFFF;border-radius:20px;padding:4px 10px;font-family:'DM Sans',sans-serif;font-size:9px;font-weight:900;text-transform:uppercase;color:#FFFFFF;">${trunc(mj.name,10)}</div>`;
+        h+=`<div style="position:absolute;top:10px;right:114px;background:linear-gradient(135deg,#7A3500,#B45309);border:2px solid #FFFFFF;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:'Barlow',sans-serif;font-size:14px;font-weight:900;color:#FFFFFF;">T</div>`;
+      }
+    } else if(tr){
+      // T badge only
+      h+=`<div style="position:absolute;top:7px;right:7px;background:linear-gradient(135deg,#7A3500,#B45309);border:2px solid #FFFFFF;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-family:'Barlow',sans-serif;font-size:20px;font-weight:900;color:#FFFFFF;">T</div>`;
+    } else if(mj){
+      // Majalis badge only — emerald
+      const _bc=getMjBadge(mj.name);
+      if(_bc && _bc.isPill){
+        h+=`<div style="position:absolute;top:7px;right:7px;background:linear-gradient(135deg,#063A1A,#0D6B2E);border:2px solid #FFFFFF;border-radius:20px;padding:5px 11px;font-family:'DM Sans',sans-serif;font-size:9px;font-weight:900;text-transform:uppercase;color:#FFFFFF;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis;">${_bc.abbr}</div>`;
+      } else if(_bc){
+        h+=`<div class="cell-badge ${_bc.isK?'badge-k':'badge-jk'}" style="font-size:${_bc.abbr.length>5?'8px':_bc.abbr.length>3?'10px':'13px'}">${_bc.abbr}</div>`;
+      } else {
+        h+=`<div style="position:absolute;top:7px;right:7px;background:linear-gradient(135deg,#063A1A,#0D6B2E);border:2px solid #FFFFFF;border-radius:20px;padding:5px 11px;font-family:'DM Sans',sans-serif;font-size:9px;font-weight:900;text-transform:uppercase;color:#FFFFFF;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis;">${trunc(mj.name,12)}</div>`;
       }
     }
 
@@ -1952,16 +1991,16 @@ function renderCal(){
     // ── JK duty block ──
     if(tr){
       h+=`<div class="duty" style="margin-top:2px;">
-        <div class="duty-lbl" style="color:#C8900A;border-left-color:#8B6010;padding-right:72px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">JAM&#256;TKHANA</div>
-        <div class="duty-name" style="color:#FFFFFF;font-size:13px;font-weight:700;">${esc(tr.trainer)}</div>
-        <div style="font-size:9px;color:#A07830;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-          🎓 Trainee: <span style="color:#D97706;font-weight:600;">${esc(tr.trainee)}</span>
+        <div class="duty-lbl" style="padding-right:${tr&&mj?'130':'72'}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">JAM&#256;TKHANA</div>
+        <div class="duty-name">${esc(tr.trainer)}</div>
+        <div style="font-size:12px;font-weight:700;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          Trainee: ${esc(tr.trainee)}
         </div>
       </div>`;
     } else {
       const jkP=getJKP(ro);
       h+=`<div class="duty">
-        <div class="duty-lbl" style="padding-right:38px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${mj?`<span style="color:#B04858;">${trunc(esc(mj.name),14)}</span>`:'JAM\u0100TKHANA'}</div>
+        <div class="duty-lbl" style="padding-right:38px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">JAM&#256;TKHANA</div>
         ${jkP
           ?`<div class="duty-name">${esc(jkP)}</div>${ro._sup?`<div class="sup-tag">SUP: ${esc(ro._sup)}</div>`:''}`
           :`<div class="duty-unassigned">—</div>`}
@@ -2674,8 +2713,10 @@ async function downloadRosterPNG(){
 
       // ── Cell background — ALL same white, majalis/training tinted ──
       let bg='#FFFFFF', bdr='rgba(21,101,192,0.15)';
-      if(isMajalis){bg='linear-gradient(160deg,#FFFFFF 0%,#FFF0F2 40%,#FFCCD4 100%)';bdr='rgba(185,28,60,0.45)';}
-      else if(isTraining){bg='linear-gradient(160deg,#FFFFFF 0%,#FFF8E8 40%,#FFE8A0 100%)';bdr='rgba(200,140,30,0.4)';}
+      if(isMajalis && isTraining){bg='linear-gradient(160deg,#FFFFFF 0%,#FFF0F0 40%,#FFD0D4 100%)';bdr='rgba(185,28,60,0.5)';}
+      else if(isMajalis && !isTraining){bg='linear-gradient(160deg,#FFFFFF 0%,#F0FBF5 40%,#C6F0D8 100%)';bdr='rgba(16,185,100,0.45)';}
+      else if(isMajalis && isTraining){bg='linear-gradient(160deg,#FFFFFF 0%,#FFF0F0 40%,#FFD0D4 100%)';bdr='rgba(185,28,60,0.5)';}
+      else if(isTraining && !isMajalis){bg='linear-gradient(160deg,#FFFFFF 0%,#FFFBF0 40%,#FFF0C0 100%)';bdr='rgba(200,140,30,0.45)';}
       clone.style.cssText=`background:${bg};border-right:1px solid ${bdr};border-bottom:1px solid ${bdr};padding:${CELL_P};min-height:${CELL_H};position:relative;box-sizing:border-box;overflow:visible;opacity:1;`;
 
       // Reset cell-inner opacity
@@ -2683,37 +2724,55 @@ async function downloadRosterPNG(){
 
       // ── Day number ──
       clone.querySelectorAll('.dn').forEach(el=>{
-        const col = isMajalis?'#8B1A30' : isTraining?'#6A4A00' : isOther?'#90AECB' : '#1E5A8A';
+        const bothMjTr = isMajalis && isTraining;
+        const col = bothMjTr?'#B91C1C' : isMajalis?'#166534' : isTraining?'#78350F' : isOther?'#90AECB' : '#1E5A8A';
         el.style.cssText=`font-family:'Barlow',sans-serif;font-size:30px;font-weight:900;color:${col};line-height:1;margin-bottom:6px;letter-spacing:-.5px;display:block;`;
       });
 
-      // ── Badge (preset = circle, custom = pill) ──
-      clone.querySelectorAll('.cell-badge').forEach(el=>{
-        const abbr = el.textContent.trim().toUpperCase();
-        const isPreset = PRESET_ABBRS.includes(abbr);
-        if(isPreset){
-          // Circle with uppercase text
-          const fs = abbr.length>=5?'11px':abbr.length>=4?'12px':abbr.length>=3?'14px':'17px';
-          const isK = abbr.includes('(K)');
-          const bgStyle = isK
-            ? 'background:linear-gradient(135deg,#064A30,#0E7A4A);border:2px solid rgba(16,185,129,0.6);color:#A7F3D0;'
-            : 'background:linear-gradient(135deg,#0A1E50,#1258B0);border:2px solid rgba(79,195,247,0.6);color:#FFFFFF;';
-          el.style.cssText=`${bgStyle}position:absolute;top:10px;right:10px;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow',sans-serif;font-weight:900;font-size:${fs};letter-spacing:-.3px;text-transform:uppercase;text-align:center;line-height:1.1;box-sizing:border-box;text-shadow:0 1px 3px rgba(0,0,0,0.3);`;
-          el.textContent = abbr;
+      // ── Badges in screenshot ──
+      const bothInSS = isMajalis && isTraining;
+      clone.querySelectorAll('.cell-badge, div[style*="border-radius:50%"][style*="top:7px"], div[style*="border-radius:20px"][style*="top:7px"]').forEach(el=>el.remove());
+      if(bothInSS){
+        // Majalis pill top-right, T badge to its left
+        const mjPill=document.createElement('div');
+        mjPill.style.cssText=`position:absolute;top:10px;right:10px;background:linear-gradient(135deg,#063A1A,#0D6B2E);border:2.5px solid #FFFFFF;border-radius:20px;padding:5px 12px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:900;text-transform:uppercase;color:#FFFFFF;white-space:nowrap;max-width:130px;overflow:hidden;text-overflow:ellipsis;box-shadow:0 2px 8px rgba(0,0,0,0.2);`;
+        const mjRaw=clone.querySelector('.duty-lbl');
+        const mjName=cell.querySelector('.cell-badge')?cell.querySelector('.cell-badge').textContent.trim():'MJ';
+        mjPill.textContent=mjName||'MAJALIS';
+        clone.querySelector('.cell-inner').appendChild(mjPill);
+        const tBadge=document.createElement('div');
+        tBadge.style.cssText=`position:absolute;top:10px;right:${148}px;background:linear-gradient(135deg,#7A3500,#B45309);border:2.5px solid #FFFFFF;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-family:'Barlow',sans-serif;font-size:18px;font-weight:900;color:#FFFFFF;box-shadow:0 2px 8px rgba(0,0,0,0.2);`;
+        tBadge.textContent='T';
+        clone.querySelector('.cell-inner').appendChild(tBadge);
+      } else if(isTraining){
+        const tBadge=document.createElement('div');
+        tBadge.style.cssText=`position:absolute;top:10px;right:10px;background:linear-gradient(135deg,#7A3500,#B45309);border:2.5px solid #FFFFFF;border-radius:50%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-family:'Barlow',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;box-shadow:0 2px 8px rgba(0,0,0,0.2);`;
+        tBadge.textContent='T';
+        clone.querySelector('.cell-inner').appendChild(tBadge);
+      } else if(isMajalis){
+        const origBadge=cell.querySelector('.cell-badge, div[style*="border-radius:50%"][style*="top:7px"], div[style*="border-radius:20px"][style*="top:7px"]');
+        const mjText=origBadge?origBadge.textContent.trim():'MJ';
+        const isPillBadge=mjText.length>4;
+        const mjEl=document.createElement('div');
+        if(isPillBadge){
+          mjEl.style.cssText=`position:absolute;top:10px;right:10px;background:linear-gradient(135deg,#063A1A,#0D6B2E);border:2.5px solid #FFFFFF;border-radius:20px;padding:5px 14px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:900;text-transform:uppercase;color:#FFFFFF;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;box-shadow:0 2px 8px rgba(0,0,0,0.2);`;
         } else {
-          // Custom = pill/bubble with full text
-          el.style.cssText=`position:absolute;top:10px;right:10px;max-width:120px;height:auto;border-radius:20px;padding:5px 10px;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-weight:700;font-size:10px;letter-spacing:.04em;text-transform:uppercase;text-align:center;line-height:1.2;background:linear-gradient(135deg,#0A1E50,#1258B0);border:1.5px solid rgba(79,195,247,0.5);color:#FFFFFF;box-sizing:border-box;word-break:break-word;white-space:normal;`;
+          mjEl.style.cssText=`position:absolute;top:10px;right:10px;width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#063A1A,#0D6B2E);border:2.5px solid #FFFFFF;display:flex;align-items:center;justify-content:center;font-family:'Barlow',sans-serif;font-size:${mjText.length>=5?'10px':mjText.length>=4?'12px':mjText.length>=3?'14px':'18px'};font-weight:900;text-transform:uppercase;color:#FFFFFF;letter-spacing:-.3px;box-shadow:0 2px 8px rgba(0,0,0,0.2);`;
         }
-      });
+        mjEl.textContent=mjText;
+        clone.querySelector('.cell-inner').appendChild(mjEl);
+      }
 
       // ── Duty label ──
       clone.querySelectorAll('.duty-lbl').forEach(el=>{
         const isMph = el.style.color&&(el.style.color.includes('A060')||el.style.color.includes('F59E'));
-        const isTrain = el.style.color&&el.style.color.includes('C890');
+        const isTrain2 = el.style.color&&el.style.color.includes('C890');
+        const bothDuty = isMajalis && isTraining;
         let col='#1A6090', bdrL='#3A90C0';
         if(isMph){col='#7A4A00';bdrL='#B07010';}
-        if(isTrain){col='#7A4A00';bdrL='#B07010';}
-        if(isMajalis&&!isMph&&!isTrain){col='#7A1428';bdrL='rgba(185,28,60,0.6)';}
+        if(isTrain2){col='#78350F';bdrL='#B07010';}
+        if(isMajalis&&!isTraining&&!isMph&&!isTrain2){col='#166534';bdrL='#16A34A';}
+        if(bothDuty&&!isMph){col='#991B1B';bdrL='#DC2626';}
         el.style.cssText=`font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:${col};border-left:3px solid ${bdrL};padding-left:7px;padding-right:70px;margin-bottom:5px;line-height:1;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
       });
 
@@ -2734,8 +2793,9 @@ async function downloadRosterPNG(){
       });
 
       // ── Trainee line ──
-      clone.querySelectorAll('div[style*="A07830"],div[style*="B08840"]').forEach(el=>{
-        el.style.cssText=`font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:#5A3A00;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px;display:block;line-height:1.3;`;
+      clone.querySelectorAll('div[style*="A07830"],div[style*="B08840"],div[style*="margin-top:4px"]').forEach(el=>{
+        const elBothT = isMajalis && isTraining;
+        el.style.cssText=`font-family:'DM Sans',sans-serif;font-size:17px;font-weight:700;color:${elBothT?'#7F1D1D':isTraining?'#451A03':'#5A3A00'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:5px;display:block;line-height:1.3;`;
         // Update emoji label inside
         el.querySelectorAll('span').forEach(s=>{s.style.color='#A06000';s.style.fontWeight='700';});
       });
