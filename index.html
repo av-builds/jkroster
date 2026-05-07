@@ -74,6 +74,33 @@ body{font-family:'DM Sans',sans-serif;background:var(--dp);color:var(--dt);min-h
 .nav-admin{display:none;}
 .nav-owner{display:none;}
 .nav-volunteer{display:none;}
+.nav-iv-team{display:none;}
+.nav-iv-admin{display:none;}
+.nav-any-admin{display:none;}
+
+/* Permission checkboxes in Admin Panel */
+.perm-chk{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(10,20,40,0.6);
+  border:1px solid rgba(79,195,247,0.15);
+  border-radius:8px;padding:7px 10px;
+  cursor:pointer;font-size:11px;font-weight:600;color:#E8F4FD;
+  transition:border-color .15s,background .15s;
+  user-select:none;
+}
+.perm-chk:hover{border-color:rgba(79,195,247,0.4);background:rgba(79,195,247,0.07);}
+.perm-chk input[type=checkbox]{
+  accent-color:#4FC3F7;width:13px;height:13px;cursor:pointer;flex-shrink:0;
+}
+.perm-chk[data-perm=owner]{ border-color:rgba(245,158,11,0.2); }
+.perm-chk[data-perm=owner]:hover{ border-color:rgba(245,158,11,0.5); background:rgba(245,158,11,0.06); }
+.perm-chk[data-perm=owner] input{ accent-color:#F59E0B; }
+.perm-chk[data-perm=av_admin],.perm-chk[data-perm=iv_admin]{ border-color:rgba(99,102,241,0.2); }
+.perm-chk[data-perm=av_admin]:hover,.perm-chk[data-perm=iv_admin]:hover{ border-color:rgba(99,102,241,0.5); background:rgba(99,102,241,0.06); }
+.perm-chk[data-perm=av_team]{ border-color:rgba(16,185,129,0.2); }
+.perm-chk[data-perm=av_team]:hover{ border-color:rgba(16,185,129,0.5); background:rgba(16,185,129,0.06); }
+.perm-chk[data-perm=iv_team]{ border-color:rgba(52,211,153,0.2); }
+.perm-chk[data-perm=iv_team]:hover{ border-color:rgba(52,211,153,0.5); background:rgba(52,211,153,0.06); }
 .ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;gap:12px;flex-wrap:wrap;}
 .ph h1{font-family:'Barlow',sans-serif;font-size:24px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;}
 .ph p{color:var(--dm);font-size:11px;margin-top:2px;}
@@ -924,13 +951,13 @@ tr:hover td{background:var(--ds2);}
       <div class="nav-item nav-volunteer" data-page="myduties" onclick="nav(this)"><span class="ni">🗓️</span> My Duties</div>
 
       <!-- ── IV ── -->
-      <div class="nav-sec nav-owner">IV</div>
-      <div class="nav-item nav-owner" data-page="iv-roster" onclick="nav(this)"><span class="ni">📋</span> Monthly Roster</div>
+      <div class="nav-sec nav-iv-team">IV</div>
+      <div class="nav-item nav-iv-team" data-page="iv-roster" onclick="nav(this)"><span class="ni">📋</span> Monthly Roster</div>
 
       <!-- ── IV MANAGEMENT ── -->
-      <div class="nav-sec nav-owner">IV Management</div>
-      <div class="nav-item nav-owner" data-page="iv-usercreation" onclick="nav(this)"><span class="ni">👤</span> User Creation</div>
-      <div class="nav-item nav-owner" data-page="iv-addons" onclick="nav(this)"><span class="ni">➕</span> Add-ons</div>
+      <div class="nav-sec nav-iv-admin">IV Management</div>
+      <div class="nav-item nav-iv-admin" data-page="iv-usercreation" onclick="nav(this)"><span class="ni">👤</span> User Creation</div>
+      <div class="nav-item nav-iv-admin" data-page="iv-addons" onclick="nav(this)"><span class="ni">➕</span> Add-ons</div>
 
       <!-- ── AV ── -->
       <div class="nav-sec nav-volunteer">AV</div>
@@ -943,8 +970,8 @@ tr:hover td{background:var(--ds2);}
       <div class="nav-item nav-admin" data-page="override" onclick="nav(this)"><span class="ni">✏️</span> Manual Override</div>
 
       <!-- ── MANAGEMENT ── -->
-      <div class="nav-sec nav-admin">Management</div>
-      <div class="nav-item nav-admin" data-page="audit" onclick="nav(this)"><span class="ni">🔍</span> Audit Logs</div>
+      <div class="nav-sec nav-any-admin">Management</div>
+      <div class="nav-item nav-any-admin" data-page="audit" onclick="nav(this)"><span class="ni">🔍</span> Audit Logs</div>
       <div class="nav-item nav-owner" data-page="adminpanel" onclick="nav(this)"><span class="ni">⚙️</span> Admin Panel</div>
 
     </nav>
@@ -1421,12 +1448,15 @@ tr:hover td{background:var(--ds2);}
                 <div style="font-size:9px;font-weight:700;color:#4ADE80;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">Password</div>
                 <input type="text" id="ap-password" placeholder="Set a password" class="wi">
               </div>
-              <div>
-                <div style="font-size:9px;font-weight:700;color:#4ADE80;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">Role</div>
-                <select id="ap-role" class="ws" style="background:#0D2040;color:#E8F4FD;border:1px solid rgba(34,197,94,0.25);">
-                  <option value="admin">Admin</option>
-                  <option value="volunteer">Volunteer (view only)</option>
-                </select>
+              <div style="grid-column:1/-1;">
+                <div style="font-size:9px;font-weight:700;color:#4ADE80;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Permissions <span style="color:rgba(74,222,128,0.5);font-weight:500;text-transform:none;letter-spacing:0;">(select one or more)</span></div>
+                <div id="ap-perms-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px;">
+                  <label class="perm-chk" data-perm="owner"><input type="checkbox" value="owner"> 👑 Owner</label>
+                  <label class="perm-chk" data-perm="av_admin"><input type="checkbox" value="av_admin"> 🛡 AV Admin</label>
+                  <label class="perm-chk" data-perm="iv_admin"><input type="checkbox" value="iv_admin"> 🛡 IV Admin</label>
+                  <label class="perm-chk" data-perm="av_team"><input type="checkbox" value="av_team"> 📹 AV Team</label>
+                  <label class="perm-chk" data-perm="iv_team"><input type="checkbox" value="iv_team"> 🌿 IV Team</label>
+                </div>
               </div>
             </div>
             <button class="btn btn-bl" style="background:linear-gradient(135deg,#166534,#15803D);" onclick="apCreateUser()">+ Create User</button>
@@ -1946,7 +1976,7 @@ async function loadUsersFromDB(){
     if(data && data.length){
       // Merge DB users — keep hardcoded as fallback, DB overrides
       data.forEach(r=>{
-        if(r.username && r.pw) USERS[r.username]={pw:r.pw,role:(r.role==='owner'||r.role==='admin'||r.role==='volunteer')?r.role:'volunteer',display:r.display||r.username};
+        if(r.username && r.pw) USERS[r.username]={pw:r.pw,role:r.role||'av_team',perms:Array.isArray(r.perms)?r.perms:(r.role?[r.role]:['av_team']),display:r.display||r.username};
       });
       // eshan.punjwani is always owner
       if(USERS['eshan.punjwani']) USERS['eshan.punjwani'].role='owner';
@@ -1968,7 +1998,7 @@ async function seedUsersToDb(){
   if(!sb) return;
   try{
     // Only insert — never overwrite existing users
-    const rows = Object.entries(USERS).map(([username,d])=>({username, pw:d.pw, role:d.role, display:d.display}));
+    const rows = Object.entries(USERS).map(([username,d])=>({username, pw:d.pw, role:d.role, perms:d.perms||[d.role], display:d.display}));
     const {error} = await sb.from('app_users').insert(rows);
     if(error && error.code !== '23505') throw error; // ignore unique constraint violations
     console.log('Users seeded to DB');
@@ -1978,7 +2008,7 @@ async function seedUsersToDb(){
 async function dbSaveUser(username, data){
   if(!sb) return;
   try{
-    const {error} = await sb.from('app_users').upsert({username, pw:data.pw, role:data.role, display:data.display}, {onConflict:'username'});
+    const {error} = await sb.from('app_users').upsert({username, pw:data.pw, role:data.role, perms:data.perms||[data.role], display:data.display}, {onConflict:'username'});
     if(error) throw error;
   } catch(e){ console.error('dbSaveUser error:', e.message); }
 }
@@ -1996,7 +2026,7 @@ async function dbRenameUser(oldUsername, newUsername, data){
   try{
     // Delete old, insert new
     await sb.from('app_users').delete().eq('username', oldUsername);
-    await sb.from('app_users').upsert({username:newUsername, pw:data.pw, role:data.role, display:data.display}, {onConflict:'username'});
+    await sb.from('app_users').upsert({username:newUsername, pw:data.pw, role:data.role, perms:data.perms||[data.role], display:data.display}, {onConflict:'username'});
   } catch(e){ console.error('dbRenameUser error:', e.message); }
 }
 
@@ -2005,17 +2035,24 @@ async function dbRenameUser(oldUsername, newUsername, data){
 ═══════════════════════════════════ */
 // Credentials — change these to your own secure passwords
 // USERS is loaded from Supabase on startup. Fallback built-ins used if DB unavailable.
+// ── PERMISSION KEYS ──
+// 'owner'    – full access (all sections)
+// 'av_admin' – AV Management + Audit Logs
+// 'iv_admin' – IV Management + Audit Logs
+// 'av_team'  – AV section (Monthly Roster + My Duties)
+// 'iv_team'  – IV section (IV Monthly Roster)
+// Users can hold multiple perms simultaneously.
 let USERS = {
-  'reshnosh.bijani':    { pw: 'AVTL',    role: 'admin', display: 'Reshnosh Bijani'    },
-  'hussain.hasnani':    { pw: 'AVATL',   role: 'admin', display: 'Hussain Hasnani'    },
-  'arhaan.prasla':      { pw: 'AVTM101', role: 'admin', display: 'Arhaan Prasla'      },
-  'eshan.punjwani':     { pw: 'AVTM307', role: 'owner', display: 'Eshan Punjwani'     },
-  'arshiyaan.charolia': { pw: 'AVTM238', role: 'admin', display: 'Arshiyaan Charolia' },
-  'irfan.jalia':        { pw: 'IVD',     role: 'admin', display: 'Irfan Jalia'        },
-  'shazad.saleem':      { pw: 'IVDD',    role: 'admin', display: 'Shazad Saleem'      },
-  'testing786':         { pw: 'bismillah1',  role: 'volunteer', display: 'Test Account'       },
-  'testingadmin786':    { pw: 'shukhran1',   role: 'admin',     display: 'Testing Admin'       },
-  'av.team':            { pw: '768110',       role: 'volunteer', display: 'AV Team'             },
+  'reshnosh.bijani':    { pw: 'AVTL',      role: 'av_admin', perms: ['av_admin'],          display: 'Reshnosh Bijani'    },
+  'hussain.hasnani':    { pw: 'AVATL',     role: 'av_admin', perms: ['av_admin'],          display: 'Hussain Hasnani'    },
+  'arhaan.prasla':      { pw: 'AVTM101',   role: 'av_admin', perms: ['av_admin'],          display: 'Arhaan Prasla'      },
+  'eshan.punjwani':     { pw: 'AVTM307',   role: 'owner',    perms: ['owner'],             display: 'Eshan Punjwani'     },
+  'arshiyaan.charolia': { pw: 'AVTM238',   role: 'av_admin', perms: ['av_admin'],          display: 'Arshiyaan Charolia' },
+  'irfan.jalia':        { pw: 'IVD',       role: 'iv_admin', perms: ['iv_admin'],          display: 'Irfan Jalia'        },
+  'shazad.saleem':      { pw: 'IVDD',      role: 'iv_admin', perms: ['iv_admin'],          display: 'Shazad Saleem'      },
+  'testing786':         { pw: 'bismillah1', role: 'av_team',  perms: ['av_team'],           display: 'Test Account'       },
+  'testingadmin786':    { pw: 'shukhran1',  role: 'av_admin', perms: ['av_admin','av_team'],display: 'Testing Admin'       },
+  'av.team':            { pw: '768110',      role: 'av_team',  perms: ['av_team'],           display: 'AV Team'             },
 };
 
 function doLogin(){
@@ -2023,7 +2060,7 @@ function doLogin(){
   const p = document.getElementById('lp').value;
   const err = document.getElementById('loginErr');
   if(USERS[u] && USERS[u].pw === p){
-    window.CU = { user: u, role: USERS[u].role, display: USERS[u].display };
+    window.CU = { user: u, role: USERS[u].role, perms: USERS[u].perms||[USERS[u].role], display: USERS[u].display };
     sessionStorage.setItem('jk_session', JSON.stringify(window.CU));
     applySession();
     // Show loading state while DB loads
@@ -2053,27 +2090,43 @@ function applySession(){
   document.getElementById('unm').textContent = CU.display;
   document.getElementById('uav').textContent  = CU.display[0].toUpperCase();
 
-  const role = CU.role; // 'volunteer', 'admin', 'owner'
-  const isOwner   = role === 'owner';
-  const isAdmin   = role === 'admin' || isOwner;
-  const isVolunteer = role === 'volunteer';
+  const perms = CU.perms || [CU.role];
+  const hasPerm = (...ps) => ps.some(p => perms.includes(p));
+  const isOwner   = hasPerm('owner');
+  const isAvAdmin = hasPerm('av_admin') || isOwner;
+  const isIvAdmin = hasPerm('iv_admin') || isOwner;
+  const isAvTeam  = hasPerm('av_team','av_admin') || isOwner;
+  const isIvTeam  = hasPerm('iv_team','iv_admin') || isOwner;
+  const isAnyAdmin = isAvAdmin || isIvAdmin;
 
-  // Role badge in sidebar
-  const roleLabels = { owner: '👑 Owner', admin: 'Administrator', volunteer: 'Volunteer' };
+  // Role badge in sidebar — list all perms nicely
+  const permLabels = { owner:'👑 Owner', av_admin:'AV Admin', iv_admin:'IV Admin', av_team:'AV Team', iv_team:'IV Team' };
   const urlEl = document.getElementById('url');
-  urlEl.textContent = roleLabels[role] || role;
-  urlEl.style.color = isOwner ? '#F59E0B' : isAdmin ? '#4FC3F7' : '#94A3B8';
+  urlEl.textContent = perms.map(p=>permLabels[p]||p).join(' · ');
+  urlEl.style.color = isOwner ? '#F59E0B' : isAnyAdmin ? '#4FC3F7' : '#94A3B8';
 
-  // ── Show/hide nav items by role ──
-  // nav-volunteer: visible to everyone logged in (volunteer, admin, owner)
+  // ── Show/hide nav by permission ──
+  // nav-volunteer (AV Team section): AV Team, AV Admin, Owner
   document.querySelectorAll('.nav-volunteer').forEach(el => {
-    el.style.display = el.classList.contains('nav-item') ? 'flex' : 'block';
+    el.style.display = isAvTeam ? (el.classList.contains('nav-item') ? 'flex' : 'block') : 'none';
   });
-  // nav-admin: visible to admin + owner
+  // nav-iv-team (IV section): IV Team, IV Admin, Owner
+  document.querySelectorAll('.nav-iv-team').forEach(el => {
+    el.style.display = isIvTeam ? (el.classList.contains('nav-item') ? 'flex' : 'block') : 'none';
+  });
+  // nav-admin (AV Management): AV Admin, Owner
   document.querySelectorAll('.nav-admin').forEach(el => {
-    el.style.display = isAdmin ? (el.classList.contains('nav-item') ? 'flex' : 'block') : 'none';
+    el.style.display = isAvAdmin ? (el.classList.contains('nav-item') ? 'flex' : 'block') : 'none';
   });
-  // nav-owner: visible to owner only
+  // nav-iv-admin (IV Management): IV Admin, Owner
+  document.querySelectorAll('.nav-iv-admin').forEach(el => {
+    el.style.display = isIvAdmin ? (el.classList.contains('nav-item') ? 'flex' : 'block') : 'none';
+  });
+  // nav-any-admin (Audit Logs): AV Admin OR IV Admin OR Owner
+  document.querySelectorAll('.nav-any-admin').forEach(el => {
+    el.style.display = isAnyAdmin ? (el.classList.contains('nav-item') ? 'flex' : 'block') : 'none';
+  });
+  // nav-owner: Owner only
   document.querySelectorAll('.nav-owner').forEach(el => {
     el.style.display = isOwner ? (el.classList.contains('nav-item') ? 'flex' : 'block') : 'none';
   });
@@ -3522,20 +3575,23 @@ function apCreateUser(){
   const display  = document.getElementById('ap-display').value.trim();
   const username = document.getElementById('ap-username').value.trim().toLowerCase();
   const password = document.getElementById('ap-password').value.trim();
-  const role     = document.getElementById('ap-role').value;
+  const permsChks = [...document.querySelectorAll('#ap-perms-grid input:checked')].map(c=>c.value);
   if(!display)  { toast('Enter a display name','err'); return; }
   if(!username) { toast('Enter a username','err'); return; }
   if(!password) { toast('Enter a password','err'); return; }
+  if(!permsChks.length){ toast('Select at least one permission','err'); return; }
   if(!/^[a-zA-Z0-9._-]+$/.test(username)){ toast('Username: only letters, numbers, dots, dashes allowed','err'); return; }
   if(USERS[username] || runtimeUsers[username]){ toast('Username already exists','err'); return; }
-  const newUserData = { pw: password, role, display };
+  const primaryRole = permsChks.includes('owner') ? 'owner' : permsChks[0];
+  const newUserData = { pw: password, role: primaryRole, perms: permsChks, display };
   USERS[username] = newUserData;
   runtimeUsers[username] = newUserData;
   dbSaveUser(username, newUserData);
   document.getElementById('ap-display').value  = '';
   document.getElementById('ap-username').value = '';
   document.getElementById('ap-password').value = '';
-  auditLog(`Created user: ${display} (${username})`, 'login', `Role: ${role}`);
+  document.querySelectorAll('#ap-perms-grid input').forEach(c=>c.checked=false);
+  auditLog(`Created user: ${display} (${username})`, 'login', `Perms: ${permsChks.join(', ')}`);
   renderApUserList();
   toast(`User "${display}" created!`);
 }
@@ -3921,9 +3977,12 @@ function apSaveUser(oldUsername){
   const newDisplay  = document.getElementById('ap-edit-display-'+_sid)?.value.trim()||'';
   const newUsername = document.getElementById('ap-edit-username-'+_sid)?.value.trim().toLowerCase()||oldUsername;
   const newPassword = document.getElementById('ap-edit-pw-'+_sid)?.value.trim()||'';
-  // For eshan (isSelf), role select is disabled — preserve existing role
-  const _roleEl = document.getElementById('ap-edit-role-'+_sid);
-  const newRole = (_roleEl && !_roleEl.disabled) ? _roleEl.value : (USERS[oldUsername]?.role||'volunteer');
+  // Read perms checkboxes (unless self — preserve owner)
+  const isSelfEdit = (oldUsername === 'eshan.punjwani');
+  let newPerms = isSelfEdit ? ['owner'] :
+    [...document.querySelectorAll(`input[name="ap-edit-perm-${_sid}"]:checked`)].map(c=>c.value);
+  if(!newPerms.length) newPerms = USERS[oldUsername]?.perms || ['av_team'];
+  const newRole = newPerms.includes('owner') ? 'owner' : newPerms[0];
 
   if(!newDisplay)  { toast('Display name cannot be empty','err'); return; }
   if(!newUsername) { toast('Username cannot be empty','err'); return; }
@@ -3943,7 +4002,7 @@ function apSaveUser(oldUsername){
     if(runtimeUsers[oldUsername]) delete runtimeUsers[oldUsername];
   }
 
-  const savedData = { pw: finalPassword, role: newRole, display: newDisplay };
+  const savedData = { pw: finalPassword, role: newRole, perms: newPerms, display: newDisplay };
   USERS[newUsername] = savedData;
   runtimeUsers[newUsername] = savedData;
 
@@ -3954,7 +4013,7 @@ function apSaveUser(oldUsername){
     dbSaveUser(newUsername, savedData);
   }
 
-  auditLog(`Edited user: ${oldData?.display} → ${newDisplay} (${oldUsername} → ${newUsername})`, 'login', `Role: ${newRole}`);
+  auditLog(`Edited user: ${oldData?.display} → ${newDisplay} (${oldUsername} → ${newUsername})`, 'login', `Perms: ${newPerms.join(', ')}`);
   renderApUserList();
   toast(`User "${newDisplay}" saved.`);
 }
@@ -3978,7 +4037,8 @@ function renderApUserList(){
           <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,hsl(${hue},55%,28%),hsl(${hue},65%,42%));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;">${(d.display||u)[0].toUpperCase()}</div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:12px;font-weight:700;color:#E8F4FD;">${esc(d.display)}</div>
-            <div style="font-size:10px;color:var(--dm);font-family:monospace;">${esc(u)} &nbsp;·&nbsp; <span style="color:${d.role==='owner'?'#F59E0B':d.role==='admin'?'#4FC3F7':'#94A3B8'};font-weight:600;">${d.role}</span></div>
+            <div style="font-size:10px;color:var(--dm);font-family:monospace;margin-bottom:3px;">${esc(u)}</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;">${(d.perms||[d.role]).map(p=>({owner:'👑 Owner',av_admin:'🛡 AV Admin',iv_admin:'🛡 IV Admin',av_team:'📹 AV Team',iv_team:'🌿 IV Team'})[p]||p).map(l=>`<span style="font-size:9px;font-weight:700;background:rgba(79,195,247,0.1);color:#4FC3F7;border:1px solid rgba(79,195,247,0.25);border-radius:10px;padding:2px 7px;">${l}</span>`).join('')}</div>
           </div>
           <div style="font-size:10px;color:#3A5878;font-family:monospace;background:rgba(0,0,0,0.25);padding:2px 8px;border-radius:4px;">${esc(d.pw)}</div>
           <span style="color:var(--dm);font-size:10px;margin-left:4px;">▼</span>
@@ -3998,13 +4058,15 @@ function renderApUserList(){
               <div style="font-size:9px;font-weight:700;color:var(--dm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Password</div>
               <input type="text" id="ap-edit-pw-${safeId}" value="${esc(d.pw)}" class="wi" style="font-size:12px;padding:6px 9px;font-family:monospace;">
             </div>
-            <div>
-              <div style="font-size:9px;font-weight:700;color:var(--dm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Role</div>
-              <select id="ap-edit-role-${safeId}" class="ws" style="background:#0D2040;color:#E8F4FD;font-size:12px;padding:6px 9px;" ${isSelf?'disabled':''}>
-                <option value="owner" ${d.role==='owner'?'selected':''}>Owner</option>
-                <option value="admin" ${d.role==='admin'?'selected':''}>Admin</option>
-                <option value="volunteer" ${d.role==='volunteer'?'selected':''}>Volunteer</option>
-              </select>
+            <div style="grid-column:1/-1;">
+              <div style="font-size:9px;font-weight:700;color:var(--dm);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px;">Permissions</div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:5px;" ${isSelf?'style="opacity:.5;pointer-events:none;"':''}>
+                ${['owner','av_admin','iv_admin','av_team','iv_team'].map(p=>{
+                  const labels={owner:'👑 Owner',av_admin:'🛡 AV Admin',iv_admin:'🛡 IV Admin',av_team:'📹 AV Team',iv_team:'🌿 IV Team'};
+                  const checked=(d.perms||[d.role]).includes(p)?'checked':'';
+                  return `<label class="perm-chk" data-perm="${p}"><input type="checkbox" name="ap-edit-perm-${safeId}" value="${p}" ${checked} ${isSelf&&p!=='owner'?'':''}> ${labels[p]}</label>`;
+                }).join('')}
+              </div>
             </div>
           </div>
           <div style="display:flex;gap:7px;">
