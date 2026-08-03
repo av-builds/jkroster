@@ -1100,6 +1100,9 @@ html{scroll-behavior:smooth;}
           <button id="screenshotBtn" onclick="downloadRosterPNG()" style="display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 4px 14px rgba(21,101,192,0.4);transition:all .18s;">
             📷 Save Hi-Res JPG
           </button>
+          <button id="csvBtn" onclick="downloadRosterCSV()" title="Export this roster period as a CSV spreadsheet" style="display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#166534,#15803D);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 4px 14px rgba(21,128,61,0.4);transition:all .18s;">
+            📄 Export CSV
+          </button>
         </div>
       </div>
       <!-- Roster issues banner — visible to AV Admins / Owner only -->
@@ -1293,6 +1296,14 @@ html{scroll-behavior:smooth;}
                   <div style="font-size:9px;font-weight:700;color:#4FC3F7;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">Majalis Date</div>
                   <input type="date" id="mjDate" class="wi">
                 </div>
+                <div>
+                  <div style="font-size:9px;font-weight:700;color:#4FC3F7;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">Uniform Status <span style="color:rgba(79,195,247,0.5);font-weight:500;text-transform:none;letter-spacing:0;">(appears in the CSV)</span></div>
+                  <select id="mjUniform" class="ws" style="background:#0D2040;color:#E8F4FD;border:1px solid rgba(79,195,247,0.3);">
+                    <option value="">— None —</option>
+                    <option value="Formal Uniform">Formal Uniform</option>
+                    <option value="Casual Uniform">Casual Uniform</option>
+                  </select>
+                </div>
               </div>
               <div>
                 <button class="btn btn-bl" style="height:38px;padding:0 20px;white-space:nowrap;" onclick="addMajalis()">+ Add Majalis</button>
@@ -1454,6 +1465,12 @@ html{scroll-behavior:smooth;}
                   <option value="__custom__">✏️ Custom…</option>
                 </select>
                 <input type="text" id="or-majalis-custom" placeholder="Custom majalis name…" class="wi" style="display:none;margin-top:6px;border-color:rgba(79,195,247,0.3);">
+                <div style="font-size:9px;font-weight:700;color:#4FC3F7;text-transform:uppercase;letter-spacing:.1em;margin:10px 0 5px;">Uniform Status</div>
+                <select id="or-majalis-uniform" class="ws" style="background:#0D0820;color:#E8F4FD;border:1px solid rgba(79,195,247,0.3);">
+                  <option value="">— None —</option>
+                  <option value="Formal Uniform">Formal Uniform</option>
+                  <option value="Casual Uniform">Casual Uniform</option>
+                </select>
                 <div id="or-majalis-current" style="font-size:11px;color:#4A8AAE;margin-top:6px;font-style:italic;"></div>
               </div>
               <!-- Buttons -->
@@ -1781,6 +1798,7 @@ async function loadFromDB(){
         category: d.category || r.category || '',
         trainee:  d.trainee  || '',
         trainer:  d.trainer  || '',
+        uniform:  d.uniform  || '',
       };
     });
     roster = {};
@@ -1844,6 +1862,7 @@ async function dbSaveMajalis(mj){
         category: '',
         trainee:  '',
         trainer:  '',
+        uniform:  mj.uniform || '',
       }
     };
     const {error} = await sb.from('majalis').upsert(payload, {onConflict:'id'});
@@ -3529,6 +3548,7 @@ function renderMajalisCards(){
         <div class="mj-list-name" style="${badge?.isK?'color:#6EE7B7;':''}">${esc(e.name)}</div>
         <div class="mj-list-meta">
           <span style="font-size:10px;color:var(--dm);">${fd(e.date)} · ${dow}</span>
+          ${e.uniform?`<span style="background:rgba(245,158,11,.12);color:#FCD34D;border:1px solid rgba(245,158,11,.3);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:4px;">👔 ${esc(e.uniform)}</span>`:''}
         </div>
       </div>
       <button class="ev-del" onclick="delMajalis(${e.id})" title="Remove">🗑</button>
@@ -3553,12 +3573,15 @@ function addMajalis(){
   const date=document.getElementById('mjDate').value;
   if(!name||sel.value===''){toast('Select or enter a Majalis name','err');return;}
   if(!date){toast('Select a date','err');return;}
-  const newMj={id:uid(),name,type:'Majalis',date,time:'',category:''};
+  const uniformEl=document.getElementById('mjUniform');
+  const uniform=uniformEl?uniformEl.value:'';
+  const newMj={id:uid(),name,type:'Majalis',date,time:'',category:'',uniform};
   majalisEvs.push(newMj);
   document.getElementById('mjName').value='';
   document.getElementById('mjName').style.display='none';
   document.getElementById('mjDate').value='';
   document.getElementById('mjNameSelect').value='';
+  if(uniformEl) uniformEl.value='';
   renderMajalisCards();renderUpcoming();updateStats();autoRoster();
   auditLog(`Added Majalis: ${name}`, 'majalis', `Date: ${date}`);
   dbSaveMajalis(newMj).then(()=>toast('Majalis saved!')).catch(()=>toast('Save failed — check connection','err'));
@@ -3889,6 +3912,112 @@ async function downloadRosterPNG(){
   } finally {
     btn.innerHTML=orig;
     btn.disabled=false;
+  }
+}
+/* ═══════════════════════════════════════════════════════
+   CSV EXPORT — one row per person, per day
+   Columns: Date · Day · Name · Location & Status ·
+            Majalis · Khushiyali · Uniform Status · Other Events
+   Period : the roster month's first Monday through the
+            Sunday before the next month's first Monday
+            (always whole weeks, e.g. Mon 3 Aug → Sun 6 Sep).
+═══════════════════════════════════════════════════════ */
+/* How event names are spelled in the CSV. Left = name stored in the app,
+   right = text written to the file. Anything not listed exports as-is. */
+const CSV_MJ_NAMES = {
+  'Chandraat': 'Chaandraat',
+  'Student':   'Student Majalis',
+};
+/* Splits a majalis name into its display text and whether it is a
+   Khushiyali "(K)" event, which belongs in column 6 instead of column 5. */
+function csvMjParts(name){
+  const raw   = (name||'').trim();
+  const isK   = /\(\s*K\s*\)\s*$/i.test(raw);
+  const base  = raw.replace(/\(\s*K\s*\)\s*$/i,'').trim();
+  return { text: CSV_MJ_NAMES[base] || base, isK };
+}
+/* RFC-4180 escaping — wraps in quotes only when needed. */
+function csvEsc(v){
+  const str = (v===null||v===undefined) ? '' : String(v);
+  return /[",\r\n]/.test(str) ? '"' + str.replace(/"/g,'""') + '"' : str;
+}
+/* First Monday on or after the 1st of the given month. */
+function firstMondayOf(yr, mo){
+  const d = new Date(yr, mo, 1);
+  return new Date(yr, mo, 1 + ((1 - d.getDay() + 7) % 7));
+}
+/* Builds the row data for the current roster month. */
+function buildRosterCSV(){
+  const start   = firstMondayOf(calYr, calMo);
+  const nextFM  = firstMondayOf(calYr, calMo + 1);
+  const end     = new Date(nextFM.getFullYear(), nextFM.getMonth(), nextFM.getDate() - 1);
+  const rows    = [];
+  let   missing = 0;
+  for(const dt = new Date(start); dt <= end; dt.setDate(dt.getDate() + 1)){
+    const ds  = localDS(dt);
+    const ro  = roster[ds] || {};
+    const tr  = trainings.find(e => e.date === ds);
+    const mj  = majalisEvs.find(e => e.date === ds);
+    const dayName = dt.toLocaleDateString('en-NZ', {weekday:'long'});
+    const dateStr = `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`;
+    // Day-level columns — repeated on every row for that date
+    let mjCol = '', khCol = '';
+    if(mj){
+      const p = csvMjParts(mj.name);
+      if(p.isK) khCol = p.text; else mjCol = p.text;
+    }
+    const uniCol = (mj && mj.uniform) || '';
+    const add = (name, location) => {
+      if(name && String(name).trim()) rows.push([dateStr, dayName, String(name).trim(), location, mjCol, khCol, uniCol, '']);
+    };
+    // ── Jamatkhana. A training day replaces the JK slot with the
+    //    trainer + trainee pair, exactly as the calendar displays it.
+    if(tr){
+      add(tr.trainer, 'Jamatkhana');
+      add(tr.trainee, 'Jamatkhana Training');
+    } else {
+      const jk = getJKP(ro);
+      if(jk) add(jk, 'Jamatkhana'); else missing++;
+    }
+    // ── MPH congregation
+    if(!ro._mph_removed){
+      add(ro._mph_primary,  'MPH');
+      add(ro._mph_primary2, 'MPH Secondary');
+    }
+  }
+  return {rows, missing, start, end};
+}
+function downloadRosterCSV(){
+  const btn  = document.getElementById('csvBtn');
+  const orig = btn ? btn.innerHTML : '';
+  try{
+    const {rows, missing, start, end} = buildRosterCSV();
+    if(!rows.length){
+      toast('Nothing to export — no one is rostered in this period','err');
+      return;
+    }
+    const HEADER = ['Date','Day','Name','Location & Status','Majalis','Khushiyali','Uniform Status','Other Events'];
+    const csv = [HEADER, ...rows].map(r => r.map(csvEsc).join(',')).join('\r\n');
+    // Leading BOM so Excel opens it as UTF-8 rather than mangling accents
+    const blob = new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8;'});
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href     = url;
+    link.download = `AV-Roster-${MO[calMo]}-${calYr}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    auditLog(`Exported CSV for ${MO[calMo]} ${calYr}`, 'roster',
+      `${rows.length} row(s) · ${fd(localDS(start))} to ${fd(localDS(end))}${missing?` · ${missing} unassigned day(s) skipped`:''}`);
+    toast(missing
+      ? `✓ CSV saved — ${rows.length} rows · ⚠ ${missing} day(s) had nobody rostered and were skipped`
+      : `✓ CSV saved — ${rows.length} rows`);
+  } catch(e){
+    console.error('CSV export failed:', e);
+    toast('CSV export failed: ' + (e.message||e), 'err');
+  } finally {
+    if(btn) btn.innerHTML = orig;
   }
 }
 /* ═══════════════════════════════════
@@ -4727,6 +4856,7 @@ function handleMajalisChange(payload){
       category: d.category||'',
       trainee: d.trainee||'',
       trainer: d.trainer||'',
+      uniform: d.uniform||'',
     };
     if(entry.category === 'training'){
       const idx = trainings.findIndex(e=>e.id===row.id);
@@ -4862,8 +4992,10 @@ function orLoadFields(){
   const mjCurrent = document.getElementById('or-majalis-current');
   const mj = majalisEvs.find(e => e.date === ds);
   if(mjSel) mjSel.value = '';
+  const mjUni = document.getElementById('or-majalis-uniform');
+  if(mjUni) mjUni.value = (mj && mj.uniform) || '';
   if(mjCurrent){
-    if(mj) mjCurrent.innerHTML = `<span style="color:#90CAF9;">Current: <b>${esc(mj.name)}</b></span>`;
+    if(mj) mjCurrent.innerHTML = `<span style="color:#90CAF9;">Current: <b>${esc(mj.name)}</b>${mj.uniform?' · 👔 '+esc(mj.uniform):''}</span>`;
     else mjCurrent.textContent = 'No majalis on this day.';
   }
   // Training section
@@ -4958,7 +5090,8 @@ function orSaveDay(){
       majalisEvs = majalisEvs.filter(e => e.date !== ds);
       dbDeleteMajalis(existing.id);
     }
-    const newMj = {id: uid(), name, type:'Majalis', date:ds, time:'', category:''};
+    const _uniEl = document.getElementById('or-majalis-uniform');
+    const newMj = {id: uid(), name, type:'Majalis', date:ds, time:'', category:'', uniform:(_uniEl?_uniEl.value:'')};
     majalisEvs.push(newMj);
     dbSaveMajalis(newMj);
     auditLog('Set majalis for '+ds+' to '+name, 'majalis', 'Via Manual Override');
