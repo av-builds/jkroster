@@ -1402,8 +1402,8 @@ html{scroll-behavior:smooth;}
               <div style="margin-bottom:14px;">
                 <div style="font-size:9px;font-weight:700;color:#A78BFA;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">Duties</div>
                 <select id="or-duty-mode" class="ws" style="background:#0D0820;color:#E8F4FD;border:1px solid rgba(109,40,217,0.4);" onchange="orToggleDutyMode()">
-                  <option value="jk">Jamatkhana Duty Only</option>
-                  <option value="jk_mph">JK and MPH Duty</option>
+                  <option value="jk">Jamatkhana Duty Only — cancels MPH for this day</option>
+                  <option value="jk_mph">JK and MPH Duty — pick MPH volunteers</option>
                 </select>
               </div>
               <!-- VOLUNTEER DUTY -->
@@ -1523,6 +1523,30 @@ html{scroll-behavior:smooth;}
           </div>
         </div>
       </div>
+      <!-- Rotation Pool Sizes -->
+      <div class="iv-panel" style="margin-bottom:20px;">
+        <div class="iv-ph" style="background:linear-gradient(135deg,#3B1A6B,#6D28D9);">
+          <span>🔁</span> Rotation Pool Sizes
+        </div>
+        <div class="iv-pb">
+          <div class="add-form" style="background:linear-gradient(160deg,#0D0618,#1A0A38);border:1px solid rgba(109,40,217,0.35);">
+            <div style="font-size:11px;color:var(--dm);margin-bottom:12px;line-height:1.6;">
+              How many people take turns on each weekday. The engine seats this many volunteers per day and cycles them week by week (wk 1 = A, wk 2 = B, wk 3 = C…). Still one person on duty per day. Applies to all months and syncs to every device instantly.
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+              <div><div style="font-size:9px;font-weight:700;color:#A78BFA;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">Mon</div><input type="number" id="ap-cap-1" class="wi" style="width:64px;" min="1" max="10" value="2"></div>
+              <div><div style="font-size:9px;font-weight:700;color:#A78BFA;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">Tue</div><input type="number" id="ap-cap-2" class="wi" style="width:64px;" min="1" max="10" value="2"></div>
+              <div><div style="font-size:9px;font-weight:700;color:#A78BFA;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">Wed</div><input type="number" id="ap-cap-3" class="wi" style="width:64px;" min="1" max="10" value="2"></div>
+              <div><div style="font-size:9px;font-weight:700;color:#A78BFA;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">Thu</div><input type="number" id="ap-cap-4" class="wi" style="width:64px;" min="1" max="10" value="2"></div>
+              <div><div style="font-size:9px;font-weight:700;color:#4FC3F7;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">Fri</div><input type="number" id="ap-cap-5" class="wi" style="width:64px;" min="1" max="10" value="2"></div>
+              <div><div style="font-size:9px;font-weight:700;color:#A78BFA;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">Sat</div><input type="number" id="ap-cap-6" class="wi" style="width:64px;" min="1" max="10" value="2"></div>
+              <div><div style="font-size:9px;font-weight:700;color:#A78BFA;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">Sun</div><input type="number" id="ap-cap-0" class="wi" style="width:64px;" min="1" max="10" value="2"></div>
+              <button class="btn btn-bl" style="background:linear-gradient(135deg,#4C1D95,#6D28D9);height:38px;" onclick="apSaveDayCaps()">Save Pool Sizes</button>
+            </div>
+            <div style="font-size:10px;color:#6D4BA0;margin-top:10px;font-style:italic;">Tip: a size bigger than the number of people actually available for that day just shows a warning — it never breaks the roster.</div>
+          </div>
+        </div>
+      </div>
       <!-- Create New User -->
       <div class="iv-panel" style="margin-bottom:20px;">
         <div class="iv-ph" style="background:linear-gradient(135deg,#1A3A0B,#2A6010);">
@@ -1621,6 +1645,9 @@ const ROLES=[
 const MO=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MOS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 let vols=[], majalisEvs=[], trainings=[], roster={};
+// People per weekday rotation (index 0=Sun … 6=Sat). Owner-configurable in
+// the Admin Panel, stored in app_settings, synced to every device.
+let dayCaps = {0:2,1:2,2:2,3:2,4:2,5:2,6:2};
 function pauseRealtime(ms){
   ms = ms || 800;
   _realtimePaused = true;
@@ -1731,6 +1758,7 @@ async function loadFromDB(){
     // Load app users and global settings
     await loadUsersFromDB();
     await loadMonthSetting();
+    await loadDayCaps();
     const vR = await sb.from('volunteers').select('*');
     if(vR.error){ console.error('volunteers error:', vR.error); throw vR.error; }
     const mR = await sb.from('majalis').select('*').order('date');
@@ -1928,6 +1956,67 @@ async function saveMonthSetting(mo, yr){
     console.error('saveMonthSetting error:', e.message);
     throw e;
   }
+}
+/* ═══════════════════════════════════
+   ROTATION POOL SIZES
+   How many people take turns on each
+   weekday. Owner sets this in the
+   Admin Panel; synced via app_settings.
+═══════════════════════════════════ */
+const CAP_DAY_ORDER = [1,2,3,4,5,6,0]; // Mon..Sun, as shown in the admin form
+function normalizeDayCaps(v){
+  const out = {};
+  for(let i=0;i<7;i++){
+    const n = parseInt(v && v[i]);
+    out[i] = (n>=1 && n<=10) ? n : 2;
+  }
+  return out;
+}
+async function loadDayCaps(){
+  if(!sb) return;
+  try{
+    const {data,error} = await sb.from('app_settings').select('*').eq('key','day_capacity').maybeSingle();
+    if(error) return; // row/table may not exist yet — defaults apply
+    if(data && data.value){
+      const val = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+      dayCaps = normalizeDayCaps(val);
+    }
+  } catch(e){ /* defaults apply */ }
+}
+async function saveDayCaps(){
+  if(!sb) return;
+  const {error} = await sb.from('app_settings').upsert(
+    {key:'day_capacity', value: JSON.stringify(dayCaps)},
+    {onConflict:'key'}
+  );
+  if(error) throw error;
+}
+function apFillDayCaps(){
+  CAP_DAY_ORDER.forEach(i=>{
+    const el = document.getElementById('ap-cap-'+i);
+    if(el) el.value = dayCaps[i];
+  });
+}
+async function apSaveDayCaps(){
+  if(!isOwnerUser()){ toast('Access denied','err'); return; }
+  const next = {};
+  for(const i of CAP_DAY_ORDER){
+    const el = document.getElementById('ap-cap-'+i);
+    const n = parseInt(el && el.value);
+    if(!(n>=1 && n<=10)){ toast('Pool sizes must be between 1 and 10','err'); return; }
+    next[i] = n;
+  }
+  dayCaps = normalizeDayCaps(next);
+  try{
+    await saveDayCaps();
+    auditLog('Updated rotation pool sizes','roster',
+      'Mon '+dayCaps[1]+' · Tue '+dayCaps[2]+' · Wed '+dayCaps[3]+' · Thu '+dayCaps[4]+' · Fri '+dayCaps[5]+' · Sat '+dayCaps[6]+' · Sun '+dayCaps[0]);
+    toast('✓ Pool sizes saved — roster regenerated for everyone');
+  } catch(e){
+    console.error('saveDayCaps error:', e.message||e);
+    toast('Applied locally but DB save failed — check connection','err');
+  }
+  autoRoster();
 }
 /* ═══════════════════════════════════
    USER MANAGEMENT — Supabase only
@@ -3077,9 +3166,10 @@ function renderRotationStrip(dayAssignees){
   el.style.display = 'flex';
   el.innerHTML = ORDER.map(i=>{
     const list = dayAssignees[i] || [];
-    const ok = list.length >= 2;
+    const cap = (dayCaps && parseInt(dayCaps[i])>=1) ? parseInt(dayCaps[i]) : 2;
+    const ok = list.length >= cap;
     return `<div style="flex:1;min-width:110px;background:${ok?'rgba(16,185,129,0.06)':'rgba(239,68,68,0.09)'};border:1px solid ${ok?'rgba(16,185,129,0.22)':'rgba(239,68,68,0.35)'};border-radius:9px;padding:8px 10px;">
-      <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:${ok?'#6EE7B7':'#FCA5A5'};margin-bottom:4px;">${LBL[i]}${ok?'':' ⚠'}</div>
+      <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:${ok?'#6EE7B7':'#FCA5A5'};margin-bottom:4px;">${LBL[i]} · ${list.length}/${cap}${ok?'':' ⚠'}</div>
       ${list.length
         ? list.map(v=>`<div data-n="${esc(v.name)}" onclick="vmJump(this.dataset.n)" title="Open in User Management" style="font-size:11px;font-weight:600;color:#E8F4FD;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(79,195,247,0.35);text-underline-offset:2px;">${esc(v.name)}</div>`).join('')
         : '<div style="font-size:11px;font-style:italic;color:#F87171;">nobody</div>'}
@@ -3176,15 +3266,15 @@ function autoRoster(){
     if(slot._auto) delete roster[ds];
   });
   if(!active.length){ _rosterIssues=[]; renderRosterIssues(); renderRotationStrip(null); renderCal(); return; }
-  // ── Step 2: Assign volunteers to weekdays — TWO per weekday ──
-  // Every weekday runs a 2-person rotation (never more). Scarcity-first:
-  // people with the fewest available days are placed first, so a
-  // Saturday-only person locks Saturday and a Thu+Sat person is steered
-  // to Thursday. Placement prefers the least-loaded eligible weekday, so
-  // days with 0 or 1 people fill up before anyone doubles a day.
-  // Anyone who can't fit (all their days already have 2) sits out JK this
-  // month and gets MPH priority instead (see Step 4).
-  const MAX_PER_DAY = 2;
+  // ── Step 2: Assign volunteers to weekdays — configurable pool sizes ──
+  // Each weekday runs an N-person rotation, where N is the Owner's
+  // "Rotation Pool Sizes" setting in the Admin Panel (default 2).
+  // Scarcity-first: people with the fewest available days are placed
+  // first, so a Saturday-only person locks Saturday and a Thu+Sat person
+  // is steered to Thursday. Placement prefers the day with the most
+  // unfilled seats relative to its target size. Anyone who can't fit
+  // sits out JK this month and gets MPH priority instead (see Step 4).
+  const capOf = i => { const n = parseInt(dayCaps && dayCaps[i]); return (n>=1 && n<=10) ? n : 2; };
   // Availability drives everything, with ONE exception: MPH-certified
   // members (role pill) are excluded from Friday JK — Friday is their
   // MPH day. All other weekdays treat them like anyone else.
@@ -3204,12 +3294,13 @@ function autoRoster(){
   candidates.forEach(x=>{
     // Eligible weekdays that still have a free rotation slot:
     // fewest assignees first, then the day with the least coverage options.
-    const open = x.opts.filter(i=>dayAssignees[i].length < MAX_PER_DAY);
+    const open = x.opts.filter(i=>dayAssignees[i].length < capOf(i));
     if(!open.length){ overflow.push(x); return; }
     let best = open[0];
     open.forEach(i=>{
-      const a = dayAssignees[i].length, b = dayAssignees[best].length;
-      if(a < b) best = i;
+      // Prefer the day with the most unfilled seats vs its target size
+      const a = capOf(i) - dayAssignees[i].length, b = capOf(best) - dayAssignees[best].length;
+      if(a > b) best = i;
       else if(a === b){
         // Tie: prefer the day fewer people can cover; if still tied,
         // Friday wins — it must never be left to a single person when
@@ -3222,16 +3313,16 @@ function autoRoster(){
   });
   // Rebalance: try to seat overflow people by relocating a flexible member
   // (someone on a full day who also fits an emptier day) — keeps every
-  // weekday at max 2 while seating as many volunteers as possible.
+  // weekday at its configured size while seating as many volunteers as possible.
   // Anyone who still can't be seated is reported to ownership below.
   const unseated = [];
   overflow.forEach(x=>{
     let seated = false;
     for(const d of x.opts){
       const list = dayAssignees[d];
-      const movable = list.find(m => eligibleDows(m).some(i=>i!==d && dayAssignees[i].length < MAX_PER_DAY));
+      const movable = list.find(m => eligibleDows(m).some(i=>i!==d && dayAssignees[i].length < capOf(i)));
       if(movable){
-        const mOpts = eligibleDows(movable).filter(i=>i!==d && dayAssignees[i].length < MAX_PER_DAY);
+        const mOpts = eligibleDows(movable).filter(i=>i!==d && dayAssignees[i].length < capOf(i));
         let alt = mOpts[0];
         mOpts.forEach(i=>{ if(dayAssignees[i].length < dayAssignees[alt].length) alt = i; });
         dayAssignees[d] = list.filter(m=>m!==movable);
@@ -3252,7 +3343,7 @@ function autoRoster(){
   while(_moved){
     _moved = false;
     for(const D of RESCUE_ORDER){
-      if(dayAssignees[D].length >= MAX_PER_DAY) continue;
+      if(dayAssignees[D].length >= capOf(D)) continue;
       // (1) direct: an unseated volunteer eligible for D
       const uIdx = unseated.findIndex(x=>x.opts.includes(D));
       if(uIdx >= 0){
@@ -3264,7 +3355,7 @@ function autoRoster(){
       //     unseated volunteer can take V's old seat on X
       swapSearch:
       for(const X of RESCUE_ORDER){
-        if(X === D || dayAssignees[X].length < MAX_PER_DAY) continue;
+        if(X === D || dayAssignees[X].length < capOf(X)) continue;
         for(const V of dayAssignees[X]){
           if(!eligibleDows(V).includes(D)) continue;
           const rIdx = unseated.findIndex(x=>x.opts.includes(X));
@@ -3284,19 +3375,28 @@ function autoRoster(){
   unseated.forEach(x=>{
     _rosterIssues.push({
       type:'unseated',
-      text:`${x.v.name} could not be given a duty day — all of their available weekdays (${(x.v.days||[]).join(', ')}) already have 2 people in rotation. Adjust availability or assign manually via Manual Override.`
+      text:`${x.v.name} could not be given a duty day — all of their available weekdays (${(x.v.days||[]).join(', ')}) are already at their configured pool size. Increase a pool size in the Admin Panel, adjust availability, or assign manually via Manual Override.`
     });
   });
   DAY_NAMES.forEach((day,i)=>{
     const n = dayAssignees[i].length;
-    if(n===1) _rosterIssues.push({
-      type:'underfilled',
-      text:`${day} has only 1 person in rotation (${dayAssignees[i][0].name}) — they will be on duty every ${day}. A second person is needed for alternation.`
-    });
-    if(n===0) _rosterIssues.push({
-      type:'empty',
-      text:`${day} has nobody available — every ${day} this month will be unassigned.`
-    });
+    const cap = capOf(i);
+    if(n===0){
+      _rosterIssues.push({
+        type:'empty',
+        text:`${day} has nobody available — every ${day} this month will be unassigned.`
+      });
+    } else if(n===1 && cap>1){
+      _rosterIssues.push({
+        type:'underfilled',
+        text:`${day} has only 1 person in rotation (${dayAssignees[i][0].name}) of the ${cap} planned — they will be on duty every ${day}.`
+      });
+    } else if(n < cap){
+      _rosterIssues.push({
+        type:'underfilled',
+        text:`${day} has ${n} of the ${cap} planned people in rotation — add availability, or lower the pool size in the Admin Panel.`
+      });
+    }
   });
   // (banner rendered at the end — Step 3 can add SUP-gender issues)
   // ── Step 3: JK assignment — fill EVERY visible cell, alternate weekly ──
@@ -4240,6 +4340,7 @@ function nav(el){
   if(el.dataset.page === 'adminpanel' && _isOwner){
     document.getElementById('ap-month').value = calMo;
     document.getElementById('ap-year').value  = calYr;
+    apFillDayCaps();
     renderApUserList();
   }
   if(window.innerWidth<=768) closeSidebar();
@@ -4518,10 +4619,49 @@ function stopRealtime(){
 function handleUserChange(payload){
   const {eventType, new:row, old} = payload;
   if(eventType === 'DELETE'){
-    if(old && old.username) delete USERS[old.username];
+    if(old && old.username){
+      delete USERS[old.username];
+      // Our own account was removed by an administrator → end this session
+      if(window.CU && CU.user === old.username){
+        toast('Your account was removed by an administrator.','err');
+        logout();
+        return;
+      }
+    }
   } else if(row && row.username){
     // Full mapping — a live update must never strip the perms array
     USERS[row.username] = dbUserToLocal(row);
+    // If OUR account changed, apply the new permissions to this live
+    // session immediately — no refresh or re-login needed.
+    if(window.CU && CU.user === row.username){
+      const fresh = USERS[row.username];
+      const before = JSON.stringify(CU.perms||[]);
+      CU.role = fresh.role;
+      CU.perms = fresh.perms;
+      CU.display = fresh.display;
+      sessionStorage.setItem('jk_session', JSON.stringify(window.CU));
+      applySession();
+      if(JSON.stringify(CU.perms) !== before){
+        toast('Your permissions were updated: ' + CU.perms.join(', '));
+        // If the page we're on is no longer permitted, fall back to Dashboard
+        const act = document.querySelector('.page.active');
+        if(act){
+          const pg = act.id.replace('page-','');
+          const perms = CU.perms||[];
+          const isOwner = perms.includes('owner');
+          const isAvAdmin = isOwner || perms.includes('av_admin');
+          const isIvAdmin = isOwner || perms.includes('iv_admin');
+          const isAvTeam = isAvAdmin || perms.includes('av_team');
+          const isAnyAdmin = isAvAdmin || isIvAdmin;
+          const ok = pg==='dashboard'
+            || (pg==='adminpanel' && isOwner)
+            || (pg==='audit' && isAnyAdmin)
+            || (['override','volunteers','events'].includes(pg) && isAvAdmin)
+            || (['calendar','myduties','stats'].includes(pg) && isAvTeam);
+          if(!ok) nav(document.querySelector('[data-page=dashboard]'));
+        }
+      }
+    }
   }
   // Re-render user list if admin panel is open
   const ap = document.getElementById('ap-userlist');
@@ -4542,6 +4682,16 @@ function handleSettingChange(payload){
         showSyncPulse('📅');
         toast(`Roster month updated to ${MO[calMo]} ${calYr}`);
       }
+    } catch(e){ console.warn('handleSettingChange error:', e); }
+  }
+  if(row.key === 'day_capacity' && row.value){
+    try{
+      const val = typeof row.value === 'string' ? JSON.parse(row.value) : row.value;
+      dayCaps = normalizeDayCaps(val);
+      apFillDayCaps();
+      autoRoster();
+      showSyncPulse('🔁');
+      toast('Rotation pool sizes updated');
     } catch(e){ console.warn('handleSettingChange error:', e); }
   }
 }
@@ -4670,13 +4820,16 @@ function orLoadFields(){
     const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     const mj = majalisEvs.find(e => e.date === ds);
     const tr = trainings.find(e => e.date === ds);
-    notesEl.textContent = dayNames[dow] + (mj ? ' · ' + mj.name : '') + (tr ? ' · Training Day' : '');
+    notesEl.textContent = dayNames[dow] + (mj ? ' · ' + mj.name : '') + (tr ? ' · Training Day' : '') + (ro._mph_removed ? ' · MPH cancelled for this day' : '');
   }
   // Duty mode
   const dutyMode = document.getElementById('or-duty-mode');
   const hasManualMph = ro._mph_primary && !ro._mph_removed;
   if(dutyMode){
-    dutyMode.value = (hasManualMph || ro._mph_manual) ? 'jk_mph' : 'jk';
+    // A day saved as "JK only" carries _mph_removed — it must stay in 'jk'
+    // mode on reload. Only a day with an actual manual MPH assignment
+    // (and MPH not cancelled) should show the MPH fields.
+    dutyMode.value = (hasManualMph || (ro._mph_manual && !ro._mph_removed)) ? 'jk_mph' : 'jk';
     orToggleDutyMode();
   }
   // Volunteer Duty dropdown
